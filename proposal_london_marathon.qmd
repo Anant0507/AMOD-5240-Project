@@ -1,0 +1,72 @@
+---
+title: "EDA Proposal Statistical"
+author: "Anant Patel - 0866771"
+format: pdf
+---
+```{r}
+#libraries
+
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+```
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2023-04-25')
+tuesdata <- tidytuesdayR::tt_load(2023, week = 17)
+
+winners <- tuesdata$winners
+london_marathon <- tuesdata$london_marathon
+```
+
+
+```{r}
+View(winners)
+View(london_marathon)
+```
+
+
+```{r}
+winners$Time.Seconds <- period_to_seconds(hms(winners$Time))
+
+str(winners)
+
+# Factoring the variables
+winners$Category <- factor(winners$Category)
+winners$Athlete <- factor(winners$Athlete)
+winners$Nationality <- factor(winners$Nationality)
+
+str(london_marathon)
+
+# Handling the NA in Raised
+london_marathon$Raised[is.na(london_marathon$Raised)] = 0
+```
+
+```{r}
+options(scip = 999)
+# Accepted participants vs finishers by amount raised
+london_marathon %>% ggplot(aes(x=Applicants, y = Accepted, size = Raised)) +
+  geom_point(alpha = 0.7) +
+  scale_size_continuous(name = "Raised (in Millions)")+
+  theme_bw()
+```
+Question: Does the amount gets raised when the applicants are accepted more?
+**OR**
+Claim: when the applicants are accepted more the amount is raised.
+
+```{r}
+# Year vs Time by Category
+winners %>% 
+  ggplot(aes(x = Year, y = Time.Seconds / 60, color = Category)) +
+  geom_point() +
+  geom_line() +
+  labs(
+    title = "Finish time (in minutes) by years in each Category",
+    x = "Year",
+    y = "Finish time in minutes"
+  ) +
+  theme_bw()
+
+```
+Wheelchair individuals have some correlation with time to finish the race
+
+
