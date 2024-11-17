@@ -9,6 +9,7 @@ format: pdf
 library(lubridate)
 library(dplyr)
 library(ggplot2)
+library(GGally)
 ```
 ```{r}
 tuesdata <- tidytuesdayR::tt_load('2023-04-25')
@@ -39,10 +40,11 @@ str(london_marathon)
 
 # Handling the NA in Raised
 london_marathon$Raised[is.na(london_marathon$Raised)] = 0
+london_marathon <- london_marathon[rowSums(is.na(london_marathon)) <= 2,]
 ```
 
 ```{r}
-options(scip = 999)
+options(scipen = 999)
 # Accepted participants vs finishers by amount raised
 london_marathon %>% ggplot(aes(x=Applicants, y = Accepted, size = Raised)) +
   geom_point(alpha = 0.7) +
@@ -67,6 +69,59 @@ winners %>%
   theme_bw()
 
 ```
-Wheelchair individuals have some correlation with time to finish the race
+Question: Wheelchair individuals have some correlation with time to finish the race
+
+```{r}
+options(scipen=10)
+ggpairs(london_marathon[,c("Applicants","Accepted","Starters","Finishers")]) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # chat gpt helped me
+```
+*OpenAI. (2024). ChatGPT [Large language model]. https://chatgpt.com*
+
+*(OpenAI, 2024)*
+
+Question: Can we predict the Finishers based on the Starters and Accepted.
+(Linear Model)
+
+```{r}
+#| fig-width: 10
+#| fig-height: 7
+winners_count <- data.frame(table(winners$Athlete))
+names(winners_count) <- c("Athlete","Frequency")
+
+winners_nationality <- unique(left_join(winners_count, winners[,c("Athlete","Nationality")], by="Athlete"))
+
+# ggplot(winners_nationality[winners_count$Frequency > 1,], aes(x=Athlete, y=Frequency)) +
+#   geom_segment( aes(x=Athlete, xend=Athlete, y=0, yend=Frequency), color="skyblue") +
+#   geom_point( color="blue", size=4, alpha=0.6) +
+#   theme_light() +
+#   coord_flip() +
+#   theme(
+#     panel.grid.major.y = element_blank(),
+#     panel.border = element_blank(),
+#     axis.ticks.y = element_blank()
+#   )
+
+winners_nationality[winners_nationality$Frequency > 1,] %>%
+  arrange(Nationality) %>%    # First sort by val. This sort the dataframe but NOT the     factor levels
+  mutate(name=factor(Athlete, levels=Athlete)) %>%   # This trick update the factor levels
+  ggplot( aes(x=name, y=Frequency, color=Nationality)) +
+  geom_segment( aes(x=name, xend=name, y=Frequency,yend=0)) +
+  geom_point( size=4) +
+  coord_flip() +
+  theme_bw() +
+  xlab("Names of Winners")
+```
+
+Question: Is united kingdom at advantage of winning the marathon? What does the proportions say?
+
+```{r}
+raised_mday <- data.frame(table(mday(london_marathon$Date), london_marathon$Raised))
+str(raised_mday)
+
+raised_mday$Var2 <- as.numeric(as.character(raised_mday$Var2))
+View(raised_mday)
+```
+
 
 
