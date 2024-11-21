@@ -2,20 +2,31 @@
 title: "EDA Proposal Statistical"
 author: "Anant Patel - 0866771"
 format: pdf
+execute:
+  echo: false
 ---
 ```{r}
 #| message: FALSE
 #| warnings: FALSE
-#libraries
 
+suppressWarnings(library(dplyr))
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(lubridate))
+suppressWarnings(library(GGally))
+#libraries
 library(lubridate)
 library(dplyr)
 library(ggplot2)
 library(GGally)
 ```
+
+
+
 ```{r}
 #| message: FALSE
 #| warnings: FALSE
+
+# Loading data
 tuesdata <- tidytuesdayR::tt_load('2023-04-25')
 tuesdata <- tidytuesdayR::tt_load(2023, week = 17)
 
@@ -29,25 +40,30 @@ london_marathon <- tuesdata$london_marathon
 <!-- View(london_marathon) -->
 <!-- ``` -->
 
+## Data Preprocessing
 
+The Category, Athlete, and Nationality feature in Winners dataset are then factorized for further analysis.
+
+The data is preprocessed to handle NA values in Raised column in London_marathon dataset by replacing NA values with 0.
 
 
 ```{r}
-winners$Time.Seconds <- period_to_seconds(hms(winners$Time))
 
-# str(winners)
+# Convert the time from hour:min:seconds to seconds
+winners$Time.Seconds <- period_to_seconds(hms(winners$Time))
 
 # Factoring the variables
 winners$Category <- factor(winners$Category)
 winners$Athlete <- factor(winners$Athlete)
 winners$Nationality <- factor(winners$Nationality)
 
-# str(london_marathon)
-
 # Handling the NA in Raised
 london_marathon$Raised[is.na(london_marathon$Raised)] = 0
 london_marathon <- london_marathon[rowSums(is.na(london_marathon)) <= 2,]
 ```
+
+## Numerical Summaries
+
 ```{r}
 summary(winners)
 summary(london_marathon)
@@ -57,18 +73,29 @@ summary(london_marathon)
 - In one of the marathons only 77 applicants were accepted and started the marathon.
 
 ```{r}
+# Subset the dataframe for starters = 77
 london_marathon[london_marathon$Starters == 77,]
 ```
+By subsetting the dataframe, the marathon was conducted in 2020 and there were 4.5 lakhs of applicants but only 77 were accepted.
+
+\newpage
+
+## Visualization
 
 ```{r}
 #| message: false 
 #| warning: false 
-#| label: fig-accepted-applicants-raised-plot
-#| fig-cap: "Scatter plot for total Applicants vs. Accepted applications and funds raised by each race" 
+#| label: fig-accepted-applicants-starter-finishers-raised-plot
+#| fig-cap: "Plots showing the relationship of Applicants - Accepted and Finishers - Starters where there is amount of charity is Raised"
+#| fig-subcap: 
+#|   - "Applicants and Accepted individuals"
+#|   - "Starters and Finishers of marathon" 
+#| layout-ncol: 2
+#| fig-align: center
 
-
+# Option ot print values without scientific notation
 options(scipen = 999)
-# Accepted participants vs finishers by amount raised
+# Applicants vs Accepted participants by amount raised
 london_marathon %>% 
   filter(Raised > 0 ) %>%
   ggplot(aes(x=Applicants, y = Accepted, size = Raised)) +
@@ -76,31 +103,45 @@ london_marathon %>%
   scale_size_continuous(name = "Raised (in Millions)")+
   labs(title="Applications by Accepted counts with raised amount") +
   theme_bw()
-```
-Question: Does the amount gets raised when the applicants are accepted more?
-Proposed Solution: Fitting a linear model can help.
-```{r}
-lmod <- lm(Raised ~ Applicants + Accepted + Starters + Finishers,london_marathon)
 
-# lmod <- lm(Raised ~ Applicants,london_marathon[london_marathon$Raised > 0,])
-
+# Starters and finishers by amount raised
 london_marathon %>% 
-  filter(Raised > 0) %>%
-  # filter(Raised > 0 & Applicants < 450000) %>%
-  filter(Applicants < 450000) %>%
-  ggplot(aes(x=Applicants, y = Raised)) +
+  filter(Raised > 0 ) %>%
+  ggplot(aes(x=Starters, y = Finishers, size = Raised)) +
   geom_point(alpha = 0.7) +
   scale_size_continuous(name = "Raised (in Millions)")+
-  labs(title="Applications by Accepted counts with raised amount") +
-  theme_bw() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = "blue")
+  labs(title="Starters by Finishers counts with raised amount") +
+  theme_bw()
 
-summary(lmod)
 ```
 
 
 
 ```{r}
+#| message: false 
+#| warning: false 
+#| label: pair-plot
+#| fig-cap: "Pair plot between applicants, accepted participants, starters, finishers, and charity amount raised from the marathon"
+
+# ggpairs plot
+london_marathon[,c("Applicants","Accepted","Starters","Finishers","Raised")] %>%
+  filter(Raised > 0) %>%
+  ggpairs() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # chat gpt helped me
+```
+
+From the scattered bubble plot it is evident that the raised amount increases with the increase in applicants and accepted. Same goes with starters and finishers, there is linearity and the amount raised also increases.
+
+From the above pair plot it is clear that there is high correlation between Applicants, Accepted, Starters, Finishers, and Raised. 
+
+Question: Can we predict the possible charity that can be raised in upcoming london marathons based on the count of Applicants, Accepted participants, starters, and finishers?
+
+```{r}
+#| message: false 
+#| warning: false 
+#| label: time-series-plot
+#| fig-cap: "Plot shows the finishing time of each category in each year"
+
 # Year vs Time by Category
 winners %>% 
   ggplot(aes(x = Year, y = Time.Seconds / 60, color = Category)) +
@@ -114,54 +155,37 @@ winners %>%
   theme_bw()
 
 ```
-Question: Wheelchair individuals have some correlation with time to finish the race?
-Proposed Solution: ANOVA test to identify the relationship between Category and time to finish race
-\newpage
+Question: Wheelchair individuals have some correlation with time to finish the race? 
+**OR**
+Does Category have effect on the finish time over the years?
 
-```{r}
-#| fig-width: 8
-winners %>% 
-  ggplot(aes(x = Category, y = Time.Seconds, fill = Category)) +
-  geom_boxplot()
-```
-Question: Is Womens' time normally distributed?
-Proposed Solution: Histogram, Boxplot, qqplot, and shapiro-wilks
+<!-- Proposed Solution: ANOVA test to identify the relationship between Category and time to finish race -->
 
-```{r}
-london_marathon[,c("Applicants","Accepted","Starters","Finishers","Raised")] %>%
-  # filter(Raised > 0) %>%
-  ggpairs() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # chat gpt helped me
-```
+<!-- *OpenAI. (2024). ChatGPT [Large language model]. https://chatgpt.com* -->
 
-*OpenAI. (2024). ChatGPT [Large language model]. https://chatgpt.com*
+<!-- *(OpenAI, 2024)* -->
 
-*(OpenAI, 2024)*
-
-Question: Can we predict the Raised amount based on the Applicants, Accepted, Starters and Finishers.
-proposed solution: Multiple Linear Regression
+<!-- Question: Can we predict the Raised amount based on the Applicants, Accepted, Starters and Finishers. -->
+<!-- proposed solution: Multiple Linear Regression -->
 
 ```{r}
 #| fig-width: 10
 #| fig-height: 7
+#| label: grouping-data-nationality
+
 winners_count <- data.frame(table(winners$Athlete))
 names(winners_count) <- c("Athlete","Frequency")
-
+# 
 winners_nationality <- unique(left_join(winners_count,
-                                        winners[,c("Athlete","Nationality")],
-                                        by="Athlete"))
-
-winners_nationality[winners_nationality$Frequency > 1,] %>%
-  arrange(Nationality) %>%    
-  mutate(name=factor(Athlete, levels=Athlete)) %>%
-  ggplot( aes(x=name, y=Frequency, color=Nationality)) +
-  geom_segment( aes(x=name, xend=name, y=Frequency,yend=0)) +
-  geom_point( size=4) +
-  coord_flip() +
-  theme_bw() +
-  xlab("Names of Winners")
+                                       winners[,c("Athlete","Nationality")],
+                                       by="Athlete"))
 ```
 ```{r}
+#| message: false 
+#| warning: false 
+#| label: nationality-total-winnings
+#| fig-cap: "The horizontal barplot show the total winnings of the country in descending order"
+
 grouped_nationality <- winners_nationality %>%
   group_by(Nationality) %>%
   summarise(Total_winnings = sum(Frequency))
@@ -174,22 +198,18 @@ grouped_nationality %>%
 
 ```
 Question: Does country have significant effect on total winnings?
-Proposed Solution: ANOVA
 
+<!-- Proposed Solution: ANOVA -->
+
+\newpage
 ```{r}
-raised_mday <- data.frame(table(mday(london_marathon$Date), london_marathon$Raised))
-raised_mday$Var2 <- as.numeric(as.character(raised_mday$Var2))
-names(raised_mday) <- c("Day","Amount_Raised","Frequency")
+#| echo: true
+#| eval: false
+#| ref.label: !expr knitr::all_labels()
 
-raised_mday %>% 
-  filter(Amount_Raised > 0 & Frequency > 0) %>%
-  ggplot(aes(x=Day, y=Amount_Raised)) +
-  geom_col() +
-  theme_minimal()
 
 ```
 
-Question: Does the Day of month have significant effect on amount raised
-Proposed Solution: ANOVA
+
 
 
