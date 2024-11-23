@@ -4,6 +4,7 @@ author: "Anant Patel - 0866771"
 format: pdf
 execute:
   echo: false
+bibliography: references.bib
 ---
 ```{r}
 #| message: FALSE
@@ -65,17 +66,38 @@ london_marathon <- london_marathon[rowSums(is.na(london_marathon)) <= 2,]
 ## Numerical Summaries
 
 ```{r}
+#| results: hide
+
 summary(winners)
 summary(london_marathon)
 ```
+
+| Column Name  | Min  | 1st Quartile | Median | 3rd Quartile | Max   | Mean |
+|--------------|------|--------------|--------|--------------|-------|------|
+| Time.Seconds | 5187 | 6550         | 7675   | 8414         | 16143 | 7608 |
+| Year         | 1981 | 1992         | 2002   | 2012         | 2022  | 2002 |
+
 - The Years of data span from 1981 to 2022 in winners whereas, there is data from 1981 to 2020 on london marathons.
 - The highest time to finish a marathon is 16143 seconds which is a outlier.
+
+| Column Name | Min | 1st Quartile | Median | 3rd Quartile | Max   | Mean  |
+|-------------|-----|--------------|--------|--------------|-------|-------|
+| Accepted    | 77  | 33057        | 43057  | 49903        | 56398 | 39269 |
+| Starters    | 77  | 24488        | 31369  | 35671        | 42906 | 28886 |
+| Finishers   | 61  | 23252        | 30584  | 35326        | 42549 | 28145 |
+
 - In one of the marathons only 77 applicants were accepted and started the marathon.
 
 ```{r}
+#| results: hide
+
 # Subset the dataframe for starters = 77
 london_marathon[london_marathon$Starters == 77,]
 ```
+| Date       | Year | Applicants | Accepted | Starters | Finishers | Raised     |
+|------------|------|------------|----------|----------|-----------|------------|
+| 2020-10-04 | 2020 | 457861     | 77       | 77       | 61        | 0          |
+
 By subsetting the dataframe, the marathon was conducted in 2020 and there were 4.5 lakhs of applicants but only 77 were accepted.
 
 \newpage
@@ -134,7 +156,7 @@ From the scattered bubble plot it is evident that the raised amount increases wi
 
 From the above pair plot it is clear that there is high correlation between Applicants, Accepted, Starters, Finishers, and Raised. 
 
-Question: Can we predict the possible charity that can be raised in upcoming london marathons based on the count of Applicants, Accepted participants, starters, and finishers?
+**Question: Can we predict the possible charity that can be raised in upcoming london marathons based on the count of Applicants, Accepted participants, starters, and finishers?**
 
 ```{r}
 #| message: false 
@@ -155,9 +177,9 @@ winners %>%
   theme_bw()
 
 ```
-Question: Wheelchair individuals have some correlation with time to finish the race? 
+**Question: Wheelchair individuals have some correlation with time to finish the race?** 
 **OR**
-Does Category have effect on the finish time over the years?
+**Does Category have effect on the finish time over the years?**
 
 <!-- Proposed Solution: ANOVA test to identify the relationship between Category and time to finish race -->
 
@@ -197,17 +219,26 @@ grouped_nationality %>%
   coord_flip()
 
 ```
-Question: Does country have significant effect on total winnings?
-
+**Question: Does country have significant effect on total winnings?**
 <!-- Proposed Solution: ANOVA -->
+To get some inspiration, you could look at the bibliographies of 
+bibliographies as well as in Dennis work around all the important 
+people [ -@harmon2024tidytuesdayR].
+\newpage
+
+# Bibliography
+
+::: {#refs}
+:::
+
 
 \newpage
+### Appendix
+#### Code
 ```{r}
 #| echo: true
 #| eval: false
 #| ref.label: !expr knitr::all_labels()
-
-
 ```
 
 
