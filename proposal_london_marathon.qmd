@@ -4,7 +4,7 @@ author: "Anant Patel - 0866771"
 format: pdf
 execute:
   echo: false
-bibliography: references.bib
+bibliography: references_up.bib
 ---
 ```{r}
 #| message: FALSE
@@ -21,7 +21,16 @@ library(ggplot2)
 library(GGally)
 ```
 
+# Introduction
 
+The dataset from the London Marathon, made available by [ -@rennie2022londonmarathon] as part of the LondonMarathon R package, provides a glimpse into various elements of this renowned race. It consists of two datasets obtained from Wikipedia as of November 1,2022:
+
+Winners.csv : This dataset outlines the champions of multiple race categories, featuring their names, nationalities, finishing time and the year of the event.
+london_marathon.csv : This dataset encompasses overall statistics such as the count of applicants, accepted entrants, starters and finishers, along with the total amount raised for charity and the official charity associated with each year.
+
+The dataset facilitates the examination of trends in winning performances, participation patterns and the influence of the marathon on charitable donations. This analysis seeks to reveal significant insights and address particular research queries through statistical techniques and modeling.
+
+The data was retrieved from the [ -@harmon2024tidytuesdayR], with additional information on its origin available in [ -@rennie2022blog] entry, “Scraping London Marathon data with {rvest}”.
 
 ```{r}
 #| message: FALSE
