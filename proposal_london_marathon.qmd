@@ -1,6 +1,6 @@
 ---
-title: "EDA Proposal Statistical"
-author: "Anant Patel - 0866771"
+title: "London Marathon Proposal"
+author: "Anant, Nikunj, Badal, Maitri"
 format: pdf
 execute:
   echo: false
@@ -23,14 +23,15 @@ library(GGally)
 
 # Introduction
 
-The dataset from the London Marathon, made available by [ -@rennie2022londonmarathon] as part of the LondonMarathon R package, provides a glimpse into various elements of this renowned race. It consists of two datasets obtained from Wikipedia as of November 1,2022:
+The dataset from the London Marathon, made available by [-@rennie2022londonmarathon] as part of the LondonMarathon R package, provides a glimpse into various elements of this renowned race. It consists of two datasets obtained from Wikipedia as of November 1,2022:
 
 Winners.csv : This dataset outlines the champions of multiple race categories, featuring their names, nationalities, finishing time and the year of the event.
+
 london_marathon.csv : This dataset encompasses overall statistics such as the count of applicants, accepted entrants, starters and finishers, along with the total amount raised for charity and the official charity associated with each year.
 
 The dataset facilitates the examination of trends in winning performances, participation patterns and the influence of the marathon on charitable donations. This analysis seeks to reveal significant insights and address particular research queries through statistical techniques and modeling.
 
-The data was retrieved from the [ -@harmon2024tidytuesdayR], with additional information on its origin available in [ -@rennie2022blog] entry, “Scraping London Marathon data with {rvest}”.
+The data was retrieved from the [-@tidytuesday], with additional information on its origin available in [-@rennie2023] entry, “Scraping London Marathon data with {rvest}”.
 
 ```{r}
 #| message: FALSE
@@ -50,7 +51,7 @@ london_marathon <- tuesdata$london_marathon
 <!-- View(london_marathon) -->
 <!-- ``` -->
 
-## Data Preprocessing
+# Data Preprocessing
 
 The Category, Athlete, and Nationality feature in Winners dataset are then factorized for further analysis.
 
@@ -72,7 +73,9 @@ london_marathon$Raised[is.na(london_marathon$Raised)] = 0
 london_marathon <- london_marathon[rowSums(is.na(london_marathon)) <= 2,]
 ```
 
-## Numerical Summaries
+\newpage
+
+# Numerical Summaries
 
 ```{r}
 #| results: hide
@@ -111,7 +114,7 @@ By subsetting the dataframe, the marathon was conducted in 2020 and there were 4
 
 \newpage
 
-## Visualization
+# Visualization
 
 ```{r}
 #| message: false 
@@ -124,7 +127,7 @@ By subsetting the dataframe, the marathon was conducted in 2020 and there were 4
 #| layout-ncol: 2
 #| fig-align: center
 
-# Option ot print values without scientific notation
+# Option to print values without scientific notation
 options(scipen = 999)
 # Applicants vs Accepted participants by amount raised
 london_marathon %>% 
@@ -188,7 +191,7 @@ winners %>%
 ```
 **Question: Wheelchair individuals have some correlation with time to finish the race?** 
 **OR**
-**Does Category have effect on the finish time over the years?**
+**Does Category have relation with the finish time over the years?**
 
 <!-- Proposed Solution: ANOVA test to identify the relationship between Category and time to finish race -->
 
@@ -228,11 +231,9 @@ grouped_nationality %>%
   coord_flip()
 
 ```
-**Question: Does country have significant effect on total winnings?**
+**Question: Does country have significant relation with total winnings?**
 <!-- Proposed Solution: ANOVA -->
-To get some inspiration, you could look at the bibliographies of 
-bibliographies as well as in Dennis work around all the important 
-people [ -@harmon2024tidytuesdayR].
+
 \newpage
 
 # Bibliography
@@ -242,8 +243,8 @@ people [ -@harmon2024tidytuesdayR].
 
 
 \newpage
-### Appendix
-#### Code
+# Appendix
+## Code
 ```{r}
 #| echo: true
 #| eval: false
