@@ -83,6 +83,7 @@ london_marathon <- london_marathon[rowSums(is.na(london_marathon)) <= 2,]
 summary(winners)
 summary(london_marathon)
 ```
+: Table representing the columns that have abnormality
 
 | Column Name  | Min  | 1st Quartile | Median | 3rd Quartile | Max   | Mean |
 |--------------|------|--------------|--------|--------------|-------|------|
@@ -91,6 +92,8 @@ summary(london_marathon)
 
 - The Years of data span from 1981 to 2022 in winners whereas, there is data from 1981 to 2020 on london marathons.
 - The highest time to finish a marathon is 16143 seconds which is a outlier.
+
+: Table shows the statistics of crucial columns in London Marathon Dataset.
 
 | Column Name | Min | 1st Quartile | Median | 3rd Quartile | Max   | Mean  |
 |-------------|-----|--------------|--------|--------------|-------|-------|
@@ -106,6 +109,8 @@ summary(london_marathon)
 # Subset the dataframe for starters = 77
 london_marathon[london_marathon$Starters == 77,]
 ```
+: Table displays the row from dataset that have only 77 accepted participants
+
 | Date       | Year | Applicants | Accepted | Starters | Finishers | Raised     |
 |------------|------|------------|----------|----------|-----------|------------|
 | 2020-10-04 | 2020 | 457861     | 77       | 77       | 61        | 0          |
@@ -159,7 +164,7 @@ london_marathon %>%
 
 # ggpairs plot
 london_marathon[,c("Applicants","Accepted","Starters","Finishers","Raised")] %>%
-  filter(Raised > 0) %>%
+  # filter(Raised > 0) %>%
   ggpairs() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) # chat gpt helped me
 ```
@@ -193,14 +198,6 @@ winners %>%
 **OR**
 **Does Category have relation with the finish time over the years?**
 
-<!-- Proposed Solution: ANOVA test to identify the relationship between Category and time to finish race -->
-
-<!-- *OpenAI. (2024). ChatGPT [Large language model]. https://chatgpt.com* -->
-
-<!-- *(OpenAI, 2024)* -->
-
-<!-- Question: Can we predict the Raised amount based on the Applicants, Accepted, Starters and Finishers. -->
-<!-- proposed solution: Multiple Linear Regression -->
 
 ```{r}
 #| fig-width: 10
@@ -231,8 +228,161 @@ grouped_nationality %>%
   coord_flip()
 
 ```
-**Question: Does country have significant relation with total winnings?**
+
 <!-- Proposed Solution: ANOVA -->
+
+# Analysis
+
+**Q1 : Can we predict the possible charity that can be raised in upcoming london marathons based on the count of Applicants, Accepted participants, starters, and finishers?**
+
+## Assumptions checking
+
+Linearity: From the pair plot it is clear that the relation is linear between Applicants, Accepted participants, starters, finishers, and Raised
+
+Independence: The observation in this data set is independent and thus have independence.
+
+Normality of residuals
+```{r}
+#| results: false
+
+names(london_marathon)
+# raised_mod <- lm(Raised ~ Applicants + Accepted + Starters + Finishers, data = london_marathon %>% filter(Raised > 0))
+raised_mod <- lm(Raised ~ Applicants + Accepted + Starters + Finishers, data = london_marathon)
+summary(raised_mod)
+```
+: Table represents the intercept and slopes of variable in  linear model.
+
+| Coefficient   | Estimate         | Std. Error      | t value | Pr(>|t|)  |
+|---------------|------------------|-----------------|---------|-----------|
+| (Intercept)   | -40.94549533     | 12.37057088     | -3.310  | 0.002171 ** |
+| Applicants    |  0.00011584      |  0.00003147     |  3.681  | 0.000777 *** |
+| Accepted      | -0.00192098      |  0.00196776     | -0.976  | 0.335653    |
+| Starters      |  0.00046931      |  0.00631594     |  0.074  | 0.941190    |
+| Finishers     |  0.00373246      |  0.00673803     |  0.554  | 0.583143    |
+
+: Table displays the results of linear model
+
+| Metric                    | Value                  |
+|---------------------------|------------------------|
+| Residual standard error   | 15.8 on 35 degrees of freedom |
+| Multiple R-squared        | 0.6696                |
+| Adjusted R-squared        | 0.6319                |
+| F-statistic               | 17.73 on 4 and 35 DF  |
+| p-value                   | 0.00000004866         |
+
+
+```{r}
+#| result: false
+par(mar = c(4.4, 3.5, 1.2,1), mgp = c(2.25, 0.8, 0))
+plot(raised_mod, which = 1)
+
+```
+
+```{r}
+#| result: false
+par(mar = c(3.5, 3.5, 1.2,1), mgp = c(2.25, 0.8, 0), mfrow = c(2,2))
+plot(raised_mod, which = 2)
+hist(raised_mod$residuals, xlab = "Residuals", main = "")
+boxplot(raised_mod$residuals, ylab = "Residuals")
+plot(0, 0, col = "white", bty = 'n', xaxt = 'n', yaxt = 'n',
+xlab = "", ylab = "")
+text(-0.8, 0, paste("Shapiro-Wilk p-value:",
+shapiro.test(raised_mod$residuals)$p.value %>% round(5)), cex = 0.75, pos = 4)
+```
+
+The residuals are normally distributed as per the above plots
+
+**Q2: Wheelchair individuals have some correlation with time to finish the race?** 
+**OR**
+**Does Category have relation with the finish time over the years?**
+
+```{r}
+#| result: false
+winners$Category <- as.factor(winners$Category)
+
+# Fit the two-way ANOVA model with interaction
+# anova_model <- aov(Time.Seconds ~ Category * as.factor(Year), data = winners)
+anova_model <- aov(Time.Seconds ~ Category, data = winners )
+
+# names(winners)
+# Summary of the ANOVA
+summary(anova_model)
+
+# Post-hoc analysis using Tukey's HSD to compare categories
+tukey_results <- TukeyHSD(anova_model, "Category")
+print(tukey_results)
+
+# Diagnostic plots
+par(mfrow = c(2, 2))
+plot(anova_model)
+```
+: Table shows the results of ANOVA test
+
+| Source      | Df  | Sum Sq      | Mean Sq     | F value | Pr(>F)                    |
+|-------------|------|-------------|-------------|---------|--------------------------|
+| Category    | 3    | 103742537   | 34580846    | 23.97   | \(7.49 \times 10^{-13}\)***|
+| Residuals   | 159  | 229379141   | 1442636     |         |                          |
+
+ANOVA has proved that there are differences among the group means as p-value < 0.05
+
+: Table shows the TukeyHSD Post Hoc test 
+
+| Comparison                       | Difference | Lower Bound | Upper Bound | Adjusted p-value |
+|----------------------------------|------------|-------------|-------------|-------------------|
+| Wheelchair Men - Men             | -1300.77   | -1990.36    | -611.18     | 0.0000140         |
+| Wheelchair Women - Men           | 137.80     | -551.79     | 827.39      | 0.9544733         |
+| Women - Men                      | 941.40     | 264.85      | 1617.95     | 0.0022746         |
+| Wheelchair Women - Wheelchair Men| 1438.56    | 732.35      | 2144.77     | 0.0000024         |
+| Women - Wheelchair Men           | 2242.17    | 1548.68     | 2935.65     | 0.0000000         |
+| Women - Wheelchair Women         | 803.60     | 110.12      | 1497.09     | 0.0159801         |
+
+A TukeyHSD Post-hoc test is coducted shows following results:
+
+- Wheelchair Men are significantly faster than Men, with a mean difference of -1300.77 seconds (p = 0.0000140).
+- There is no significant difference between Wheelchair Women and Men, with a mean difference of 137.80 seconds (p = 0.9544733).
+- Women are significantly slower than Men, with a mean difference of 941.40 seconds (p = 0.0022746).
+- Wheelchair Women are significantly slower than Wheelchair Men, with a mean difference of 1438.56 seconds (p = 0.0000024).
+- Women are significantly slower than Wheelchair Men, with a mean difference of 2242.17 seconds (p = 0.0000000).
+- Women are significantly slower than Wheelchair Women, with a mean difference of 803.60 seconds (p = 0.0159801).
+
+**Q3: Is the proportions of winners from each country same?**
+
+```{r}
+#| results: false
+# Empty vector
+nationality_vec <- c()
+
+# Iterating the rows of dataframe and adding values into nationality_vec
+for (i in 1:nrow(grouped_nationality)) {
+  row_data <- grouped_nationality[i, ]
+  # Access individual values using column names or indexing
+  country <- row_data$Nationality
+  total_winnings <- row_data$Total_winnings
+  # print(country)
+  nationality_vec <- c(nationality_vec,rep(paste(country),total_winnings))
+  # Do something with the row data
+  # print(paste("Country:", country, ", Total Winnings:", total_winnings))
+}
+
+# Contingency table for the vector
+contingency_tab <- table(nationality_vec)
+
+# Perform the chi-square test
+chi_sq_test <- chisq.test(contingency_tab)
+
+# Print the results
+print(chi_sq_test)
+```
+: Table shows the results of chi square goodness of fit
+
+| Statistic | Value |
+|---|---|
+| Chi-squared | 334.52 |
+| Degrees of Freedom (df) | 23 |
+| p-value | < 0.00000000000000022 |
+
+The Chi-square test for goodness of fit has p-value < 0.05 that means we reject the null hypothesis and conclude that there are differences in the proportion of total winnings based on country.
+
 
 \newpage
 
